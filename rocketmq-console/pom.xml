@@ -26,6 +26,7 @@
         <aspectj.version>1.6.11</aspectj.version>
         <main.basedir>${basedir}/../..</main.basedir>
         <docker.image.prefix>styletang</docker.image.prefix>
+        <maven.test.skip>true</maven.test.skip>
     </properties>
 
     <dependencies>
@@ -92,6 +93,7 @@
 
     </dependencies>
     <build>
+        <finalName>rocketmq-console-ng</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -183,19 +185,19 @@
                 </executions>
             </plugin>
             <!--<plugin>-->
-                <!--<artifactId>maven-javadoc-plugin</artifactId>-->
-                <!--<version>2.10.4</version>-->
-                <!--<configuration>-->
-                    <!--<charset>UTF-8</charset>-->
-                <!--</configuration>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<id>attach-javadocs</id>-->
-                        <!--<goals>-->
-                            <!--<goal>jar</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
-                <!--</executions>-->
+            <!--<artifactId>maven-javadoc-plugin</artifactId>-->
+            <!--<version>2.10.4</version>-->
+            <!--<configuration>-->
+            <!--<charset>UTF-8</charset>-->
+            <!--</configuration>-->
+            <!--<executions>-->
+            <!--<execution>-->
+            <!--<id>attach-javadocs</id>-->
+            <!--<goals>-->
+            <!--<goal>jar</goal>-->
+            <!--</goals>-->
+            <!--</execution>-->
+            <!--</executions>-->
             <!--</plugin>-->
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -269,8 +271,95 @@
                 <version>3.0.4</version>
             </plugin>
 
+            <!-- 这个插件是用来打jar包的 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-jar</id>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <archive>
+                        <!-- 生成的jar中，不要包含pom.xml和pom.properties这两个文件 -->
+                        <addMavenDescriptor>false</addMavenDescriptor>
+                        <manifest>
+                            <!-- 项目启动类 -->
+                            <mainClass>org.apache.rocketmq.console.App</mainClass>
+                            <!-- 是否要把第三方jar放到manifest的classpath中 -->
+                            <addClasspath>true</addClasspath>
+                            <!-- 外部依赖jar包的最终位置 -->
+                            <classpathPrefix>lib/</classpathPrefix>
+                        </manifest>
+                        <manifestEntries>
+                            <!--将资源文件加入classpath中填写配置文件相对于项目jar包的路径-->
+                            <Class-Path>../conf/</Class-Path>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <!-- 使用assembly打包 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <!-- assembly配置文件位置 -->
+                                <descriptor>src/main/assembly/assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             
+            <!-- maven资源文件复制插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <encoding>UTF-8</encoding>
+                            <outputDirectory>
+                                ${project.build.directory}/resources
+                            </outputDirectory>   <!-- 表示把配置文件拷到和jar包同一个路径resources下 -->
+                            <resources>
+                                <resource>
+                                    <directory>src/main/resources/</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
+
+        <resources>
+            <resource>
+                <!-- 主工程打包排除resources下的静态文件夹 -->
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>**/**</exclude>
+                </excludes>
+                <!--指定src/main/resources资源要过滤-->
+                <filtering>true</filtering>
+            </resource>
+        </resources>
     </build>
 
 </project>
